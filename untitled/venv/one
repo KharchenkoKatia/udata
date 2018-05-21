@@ -1,0 +1,183 @@
+import copy
+import sys
+import math
+
+#Функция разложения матрицы в 2 триугольные
+#в качестве аргумента принимает матрицу
+def Factorization(A):
+    #копирование матрицы
+    U = copy.deepcopy(A)
+    #реализация LU разложения
+    L = [[0] * len(U[0]) for i in range(len(U))]
+    for i in range(len(U)):
+        #ошибка при ели диагональный елемент равен 0
+        #if math.fabs(U[i][i])> sys.float_info.epsilon*5:
+        if U[i][i] == 0:
+            return (False, False)
+        L[i][i] = 1
+        for k in range(i + 1, len(U)):
+            L[k][i] = U[k][i] / U[i][i]
+            for j in range(i, len(U[0])):
+                U[k][j] -= L[k][i] * U[i][j]
+    #возращения кортежа матриц
+    return (L, U)
+
+#Функция подщета обратной матрицы с помощу LU разложнния
+#Как аргументы принимает две матрицы
+def Inversed_matrix(L, U):
+
+    A = [[0]* len(U) for  i in range (len(U))]
+    for k in range(len(U)):
+        e = [1 if j == k else 0 for j in range(len(U))]
+        y = []
+        y.append([])
+        y[0].append(e[0])
+        for i in range(1, len(U)):
+            sum = 0
+            for j in range(i):
+                sum += L[i][j] * y[j][0]
+            y.append([])
+            y[i].append(e[i] - sum)
+        e[-1] = y[-1][0] / U[-1][-1]
+        for i in range(len(U) - 2, -1, -1):
+            sum = 0
+            for j in range(i + 1, len(U)):
+                sum += e[j] * U[i][j]
+            e[i] = 1 / U[i][i] * (y[i][0] - sum)
+        for i in range(len(U)):
+            A[i][k] = e[i]
+    #Функция возращает обратною матрицу
+    return A
+#Функция которая определяет норму матрицы
+#На вход примает матрицу
+def matrix_norm(A):
+    #вычисление найбольшей сумы столбика матрицы
+    max = 0
+    for j in range(len(A[0])):
+        sum = 0
+        for i in range(len(A)):
+            sum += abs(A[i][j])
+        if sum > max:
+            max = sum
+    #возращает число нормы матрицы
+    return max
+#функция подщета умножения 2 матриц
+#на вход принимает 2 матрицы
+def multiplying(A, B):
+    #провепка возмодности умножения
+    if(len(A[0]) != len(B)):
+        return False
+    tmp = []
+    #подщет умножения
+    for i in range(len(A)):
+        tmp.append([])
+        for j in range(len(B[0])):
+            sum = 0
+            for k in range(len(A[0])):
+                sum = sum + A[i][k] * B[k][j]
+            tmp[i].append(sum)
+    #результатом являеться умножения, если оно возможно
+    return tmp
+#Функция отнимания матриц
+#на ввод принимает 2 матрицы
+def subtraction(A, B):
+    #алгоритм поеелементного отнимания
+    tmp = []
+    for i in range(len(A)):
+        tmp.append([])
+        for j in range(len(A[0])):
+            tmp[i].append(A[i][j] - B[i][j])
+    #наа выходе матрица, которая есть результатом отнимания 2 матриц
+    return tmp
+#Фукция замены столбиков для метода Гауса
+#принимает на вход матрицу, вектор столбец решение и номер столбца, над которым происходлит действия
+def changing_lines(A, b, i):
+    #алгоритм поиска найбольшего аргумента в рядке
+    max = A[i][i]
+    index = i
+    for m in range(i + 1, len(A)):
+        if abs(A[m][i]) > abs(max):
+            max = A[m][i]
+            index = m
+    #проверка на 0 диогонального елемента
+    if max == 0:
+        return -i
+    #влгоритм заменны столбиков
+    temp = b[index][0]
+    b[index][0] = b[i][0]
+    b[i][0] = temp
+    for j in range(len(A[0])):
+        temp = A[index][j]
+        A[index][j] = A[i][j]
+        A[i][j] = temp
+    #возращает столбик с которым призошла замена
+    return i
+#функция решения СЛАР Гаусом
+#На вход принимает матрицу и вектор столбец
+def Gauss(A, a):
+    B = copy.deepcopy(A)
+    b = copy.deepcopy(a)
+    #
+    for i in range(len(B) - 1):
+        i = changing_lines(B, b, i)
+        print_matrix(B, str(i) + " Нимер даной итерации:")
+        print_matrix(b, "текщая матрица: ")
+        if i < 0:
+            #если на диогонали 0, то возращениться номер итерации на которой произошла ошибка
+            return i
+        for k in range(i + 1, len(B)):
+            temp = B[k][i] / B[i][i]
+            b[k][0] -= temp * b[i][0]
+            for j in range(i, len(B[0])):
+                B[k][j] -= temp * B[i][j]
+        print_matrix(B, str(i) + "  Намер данной итерации:")
+        print_matrix(b, "текщая матрица: ")
+    #если последний диагональний равен 0, возращен его индекс
+    if B[-1][-1] == 0:
+        return (len(B) - 1)
+    #подщет вектора столбца ответа
+    x = [[0] * 1 for i in range(len(B[0]))]
+    x[-1][0] = b[-1][0] / B[-1][-1]
+    for i in range(len(B) - 2, -1, -1):
+        sum = 0
+        for j in range(i + 1, len(B[0])):
+            sum += B[i][j] * x[j][0]
+        x[i][0] = 1 / B[i][i] * (b[i][0] - sum)
+    #
+    return x
+# функция печати матрицы
+def print_matrix(A, text):
+    print(text)
+    for i in range(len(A)):
+        for j in range(len(A[i])):
+            print('{:>6}'.format(round(A[i][j], 3)), end = ' ')
+        print()
+#функция ввода матрицы с клавиатуры
+def Input_matrix_from_keyboard():
+
+    n = int(input("Ввкдите количество строк: "))
+    print('Введите матрицу: ')
+
+    A = [[float(j) for j in input().split()] for i in range (n)]
+    return A
+
+A = Input_matrix_from_keyboard()
+b = Input_matrix_from_keyboard()
+x = Gauss(A, b)
+if type(x) == int:
+    print("Система виродженая, обнаружено на  " +
+          str(-x) + " итерации")
+else:
+    print_matrix(x, "Ответ: ")
+    print_matrix(subtraction(multiplying(A, x), b), "Проверка r = A*x - b = ")
+(L, U) = Factorization(A)
+if L == False:
+    print("Матрицу нельзя разложить")
+    quit(-1)
+print_matrix(L, "МАТРИЦА L:")
+print_matrix(U, "МАТРИЦА U:")
+print_matrix(multiplying(L, U), "проврка L*U = ")
+B = Inversed_matrix(L, U)
+print_matrix(B, "A^(-1) = ")
+print_matrix(multiplying(A,B),"A*A^(-1) = ")
+print("число обусловлености = " + str(round(matrix_norm(A)*matrix_norm(B), 3)))
